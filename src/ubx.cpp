@@ -994,7 +994,7 @@ GPSDriverUBX::payloadRxAddRxmRaw(const uint8_t b)
 	} else {
 		if (_rx_payload_index == sizeof(ubx_payload_rx_rxm_raw_part1_t)) {
 			// Part 1 complete: decode Part 1 buffer
-			_raw_meas->count = MIN(_buf.payload_rx_rxm_raw_part1.numCh, satellite_info_s::SAT_INFO_MAX_SATELLITES);
+			_raw_meas->count = MIN(_buf.payload_rx_rxm_raw_part1.numSV, raw_meas_s::RAW_MEAS_MAX_SATELLITES);
 		}
 
 		if (_rx_payload_index < sizeof(ubx_payload_rx_rxm_raw_part1_t) + _raw_meas->count * sizeof(
