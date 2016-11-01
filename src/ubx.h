@@ -62,6 +62,7 @@
 #define UBX_CLASS_CFG		0x06
 #define UBX_CLASS_MON		0x0A
 #define UBX_CLASS_RTCM3	0xF5 /**< This is undocumented (?) */
+#define UBX_CLASS_RXM		0x02
 
 /* Message IDs */
 #define UBX_ID_NAV_POSLLH	0x02
@@ -91,6 +92,7 @@
 #define UBX_ID_RTCM3_1005	0x05
 #define UBX_ID_RTCM3_1077	0x4D
 #define UBX_ID_RTCM3_1087	0x57
+#define UBX_ID_RXM_RAW		0x10
 
 /* Message Classes & IDs */
 #define UBX_MSG_NAV_POSLLH	((UBX_CLASS_NAV) | UBX_ID_NAV_POSLLH << 8)
@@ -120,6 +122,7 @@
 #define UBX_MSG_RTCM3_1005	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1005 << 8)
 #define UBX_MSG_RTCM3_1077	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1077 << 8)
 #define UBX_MSG_RTCM3_1087	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1087 << 8)
+#define UBX_MSG_RXM_RAW		((UBX_CLASS_RXM) | UBX_ID_RXM_RAW << 8)
 
 /* RX NAV-PVT message content details */
 /*   Bitfield "valid" masks */
@@ -405,6 +408,25 @@ typedef struct {
 	uint8_t		extension[30];
 } ubx_payload_rx_mon_ver_part2_t;
 
+/* Rx RXM-RAW Part 1 */
+typedef struct {
+	int32_t		iTOW;
+	int16_t		week;
+	uint8_t		numSV;
+	uint8_t		reservered;
+} ubx_payload_rx_rxm_raw_part1_t;
+
+/* Rx RXM-RAW Part 2 (repeated) */
+typedef struct {
+	double		cpMes;
+	double		prMes;
+	float		doMes;
+	uint8_t		sv;
+	int8_t		mesQI;
+	int8_t		cno;
+	uint8_t		lli;
+} ubx_payload_rx_rxm_raw_part2_t;
+
 /* Rx ACK-ACK */
 typedef	union {
 	uint16_t	msg;
@@ -521,6 +543,8 @@ typedef union {
 	ubx_payload_rx_mon_hw_ubx7_t		payload_rx_mon_hw_ubx7;
 	ubx_payload_rx_mon_ver_part1_t		payload_rx_mon_ver_part1;
 	ubx_payload_rx_mon_ver_part2_t		payload_rx_mon_ver_part2;
+	ubx_payload_rx_rxm_raw_part1_t	payload_rx_rxm_raw_part1;
+	ubx_payload_rx_rxm_raw_part2_t	payload_rx_rxm_raw_part2;
 	ubx_payload_rx_ack_ack_t		payload_rx_ack_ack;
 	ubx_payload_rx_ack_nak_t		payload_rx_ack_nak;
 	ubx_payload_tx_cfg_prt_t		payload_tx_cfg_prt;
@@ -572,6 +596,9 @@ public:
 	GPSDriverUBX(Interface interface, GPSCallbackPtr callback, void *callback_user,
 		     struct vehicle_gps_position_s *gps_position,
 		     struct satellite_info_s *satellite_info);
+	GPSDriverUBX(Interface interface, GPSCallbackPtr callback, void *callback_user,
+		     struct vehicle_gps_position_s *gps_position,
+		     struct satellite_info_s *satellite_info, struct raw_meas_s *raw_meas);
 	virtual ~GPSDriverUBX();
 	int receive(unsigned timeout);
 	int configure(unsigned &baudrate, OutputMode output_mode);
@@ -595,6 +622,7 @@ private:
 	int payloadRxAdd(const uint8_t b);
 	int payloadRxAddNavSvinfo(const uint8_t b);
 	int payloadRxAddMonVer(const uint8_t b);
+	int payloadRxAddRxmRaw(const uint8_t b);
 
 	/**
 	 * Finish payload rx
@@ -646,6 +674,7 @@ private:
 
 	struct vehicle_gps_position_s *_gps_position;
 	struct satellite_info_s *_satellite_info;
+	struct raw_meas_s *_raw_meas;
 	uint64_t _last_timestamp_time;
 	bool			_configured;
 	ubx_ack_state_t		_ack_state;
