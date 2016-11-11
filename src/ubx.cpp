@@ -75,7 +75,7 @@
 
 /**** Warning macros, disable to save memory */
 #define UBX_WARN(...)		{GPS_WARN(__VA_ARGS__);}
-#define UBX_DEBUG(...)		{/*GPS_WARN(__VA_ARGS__);*/}
+#define UBX_DEBUG(...)		{GPS_WARN(__VA_ARGS__);}
 
 GPSDriverUBX::GPSDriverUBX(Interface interface, GPSCallbackPtr callback, void *callback_user,
 			   struct vehicle_gps_position_s *gps_position,
@@ -340,6 +340,7 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 	}
 
 	if (!configureMessageRateAndAck(UBX_MSG_RXM_RAW, (_raw_meas != nullptr) ? 5 : 0, true)) {
+		UBX_WARN("failed to configure RXM-RAW");
 		return -1;
 	}
 
@@ -569,6 +570,7 @@ GPSDriverUBX::parseChar(const uint8_t b)
 			break;
 
 		case UBX_MSG_RXM_RAW:
+			UBX_WARN("received raw message payload");
 			ret = payloadRxAddRxmRaw(b);
 			break;
 
@@ -995,6 +997,8 @@ GPSDriverUBX::payloadRxAddRxmRaw(const uint8_t b)
 		if (_rx_payload_index == sizeof(ubx_payload_rx_rxm_raw_part1_t)) {
 			// Part 1 complete: decode Part 1 buffer
 			_raw_meas->count = MIN(_buf.payload_rx_rxm_raw_part1.numSV, raw_meas_s::RAW_MEAS_MAX_SATELLITES);
+
+			UBX_WARN("number of satellites of raw measurement: %d", _raw_meas->count);
 		}
 
 		if (_rx_payload_index < sizeof(ubx_payload_rx_rxm_raw_part1_t) + _raw_meas->count * sizeof(
@@ -1015,6 +1019,8 @@ GPSDriverUBX::payloadRxAddRxmRaw(const uint8_t b)
 				_raw_meas->mesQI[sat_index]	= (int8_t)(_buf.payload_rx_rxm_raw_part2.mesQI);
 				_raw_meas->cno[sat_index]	= (int8_t)(_buf.payload_rx_rxm_raw_part2.cno);
 				_raw_meas->lli[sat_index]	= (uint8_t)(_buf.payload_rx_rxm_raw_part2.lli);
+
+				//UBX_WARN("sat %d has psuedorange %f", _raw_meas->sv[sat_index], _raw_meas->prMes[sat_index]);
 			}
 		}
 	}
@@ -1029,7 +1035,7 @@ GPSDriverUBX::payloadRxAddRxmRaw(const uint8_t b)
 /**
  * Finish payload rx
  */
-int	// 0 = no message handled, 1 = message handled, 2 = sat info message handled
+int	// 0 = no message handled, 1 = message handled, 2 = sat info message handled, 3 = raw measurement message handled
 GPSDriverUBX::payloadRxDone(void)
 {
 	int ret = 0;
@@ -1157,6 +1163,7 @@ GPSDriverUBX::payloadRxDone(void)
 
 	case UBX_MSG_NAV_POSLLH:
 		UBX_TRACE_RXMSG("Rx NAV-POSLLH");
+		UBX_WARN("Rx RXM-RAW");
 
 		_gps_position->lat	= _buf.payload_rx_nav_posllh.lat;
 		_gps_position->lon	= _buf.payload_rx_nav_posllh.lon;
@@ -1349,11 +1356,12 @@ GPSDriverUBX::payloadRxDone(void)
 
 	case UBX_MSG_RXM_RAW:
 		UBX_TRACE_RXMSG("Rx RXM-RAW");
+		UBX_WARN("Rx RXM-RAW");
 
 		// _raw_meas already populated by payload_rx_add_rxm_raw(), just add a timestamp
 		_raw_meas->timestamp = gps_absolute_time();
 
-		ret = 2;
+		ret = 3;
 		break;
 
 	case UBX_MSG_ACK_ACK:
