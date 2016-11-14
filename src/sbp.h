@@ -55,6 +55,7 @@
 #define SBP_MSG_VEL_NED		0x0205
 #define SBP_MSG_OBS			0x0043 //0x0049
 #define SBP_MSG_TRACKING_STATE_DETAILED	0x0011
+#define SBP_MSG_HEARTBEAT	0xFFFF
 
 
 /* RX MSG_POS_LLH content details */
@@ -285,6 +286,8 @@ private:
 	bool					_got_posllh;
 	bool					_got_velned;
 	bool					_got_obs;
+	bool					_got_heartbeat;
+	bool					_configured;
 	sbp_decode_state_t		_decode_state;
 	sbp_rxmsg_state_t		_rx_state;
 

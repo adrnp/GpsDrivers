@@ -42,17 +42,10 @@
  */
 
 
-#include <cstdlib>	/* standard library (std namespace) */
-#include <unistd.h>	/* unix standard library (e.g. read call) */
-#include <iostream>	/* output and printing library */
-
-#include <cstdint>	/* for more datatypes */
-#include <string.h>	/* use of strings and string related functions */
-#include <math.h>	/* for pow and other math functions */
-
-#include <iomanip>	/* std::setfill and setw functions */
-
-#include <bitset>	/* std::bitset<#> for bit representing an int */
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include <ctime>
 
 #include "sbp.h"
 
@@ -68,9 +61,16 @@ GPSDriverSBP::GPSDriverSBP(GPSCallbackPtr callback, void *callback_user,
 	_raw_meas(raw_meas),
 	_got_posllh(false),
 	_got_velned(false),
-	_got_obs(false)
+	_got_obs(false),
+	_got_heartbeat(false),
+	_configured(false)
 {
 	decodeInit();
+
+	// initialize raw measurement info
+	if (_raw_meas != nullptr) {
+		memset(_raw_meas, 0, sizeof(*_raw_meas));
+	}
 }
 
 GPSDriverSBP::GPSDriverSBP(GPSCallbackPtr callback, void *callback_user,
@@ -86,6 +86,7 @@ GPSDriverSBP::~GPSDriverSBP()
 int
 GPSDriverSBP::configure(unsigned &baudrate, OutputMode output_mode)
 {
+	GPS_WARN("trying to configure SBP");
 	if (output_mode != OutputMode::GPS) {
 		GPS_WARN("SBP: Unsupported Output Mode %i", (int)output_mode);
 		return -1;
@@ -98,6 +99,29 @@ GPSDriverSBP::configure(unsigned &baudrate, OutputMode output_mode)
 	baudrate = SBP_BAUDRATE;
 
 	/* no configuration messages to send to the receiver */
+
+	// check to see if the heartbeat message has come in (comes in once a second)
+	gps_abstime time_started = gps_absolute_time();
+	int timeout = 500;  // will wait a full second
+	int ret = 0;
+	while (!_configured && (gps_absolute_time() < time_started + timeout * 1000)) {
+		ret = receive(timeout);
+		if (ret > 0) {
+			_configured = true;
+			break;
+		}
+	}
+
+	// TODO: this should be based on the heartbeat, but need to find a good way to then handle the 
+	// in between time when no messages are being sent, but we've detected that we are connected to a Piksi receiver
+
+	if (_configured) {
+		GPS_WARN("successfully configured");
+		return 0;
+	} else {
+		GPS_WARN("no useful message received");
+		return -1;
+	}
 
 	return 0;
 }
@@ -123,7 +147,7 @@ GPSDriverSBP::receive(unsigned timeout)
 			return -1;
 
 		} else {
-			//UBX_DEBUG("read %d bytes", ret);
+			//GPS_WARN("read %d bytes", ret);
 
 			/* pass received bytes to the packet decoder */
 			for (int i = 0; i < ret; i++) {
@@ -137,11 +161,16 @@ GPSDriverSBP::receive(unsigned timeout)
 				return handled;
 			}
 
+			// this is for triggering a return from a configuration waiting for the heartbeat
+			if (!_configured && handled > 0) {
+				return handled;
+			}
+
 		}
 
 		/* abort after timeout if no useful packets received */
 		if (time_started + timeout * 1000 < gps_absolute_time()) {
-			GPS_WARN("timed out, returning");
+			GPS_WARN("[SBP] timed out, returning");
 			return -1;
 		}
 	}
@@ -153,7 +182,7 @@ GPSDriverSBP::decodeInit()
 	//std::cout << "initializing decode\n";
 
 	/* set state to wait for sync */
-	_decode_state = SBP_DECODE_SYNC;
+	_decode_state = SBP_DECODE_PREAMBLE;
 
 	/* reinit the payload starting at the header */
 	_rx_payload_index = 0;
@@ -225,7 +254,14 @@ GPSDriverSBP::parseChar(const uint8_t c)
 		/* obs message needs to be handled differently */
 		switch (_rx_msg) {
 		case SBP_MSG_OBS:
-			ret = payloadRxAddObs(c);
+
+			// only add to the payload if we are handling the observations messages
+			if (_rx_state == SBP_RXMSG_HANDLE) {
+				ret = payloadRxAddObs(c);
+			} else {
+				decodeInit();
+			}
+
 			break;
 
 		default:
@@ -235,10 +271,6 @@ GPSDriverSBP::parseChar(const uint8_t c)
 
 		// check if we have completed the payload
 		if (ret > 0) {
-
-			// DEBUG
-			//std::cout << "\n\tpayload completed, read " << std::dec << _rx_payload_index << " bytes\n";
-
 			_decode_state = SBP_DECODE_CHECKSUM1;
 		}
 
@@ -248,53 +280,27 @@ GPSDriverSBP::parseChar(const uint8_t c)
 	/* Expecting payload checksum */
 	case SBP_DECODE_CHECKSUM1:
 
-		// DEBUG - show incoming byte
-		//std::cout << "\nlow: " << std::hex << std::setfill('0') << std::setw(2) << (int) c << " " << (int) (_rx_checksum & 0xFF);
-	
-		// payloadRxAddChecksum(c, 0);
-
 		if (c == (_rx_checksum & 0xFF)) {
 			_decode_state = SBP_DECODE_CHECKSUM2;			
 		} else {
 			// DEBUG
+			//GPS_WARN("first byte failure");
 			//std::cout << "\n first byte error" << std::endl;
 			decodeInit();
 		}
 
-		
-
-		// get the next checksum byte
-		//decodeInit();
-		//_decode_state = SBP_DECODE_SYNC;
-		
 		break;
 	
 	/* Expecting payload checksum (2nd byte) */
 	case SBP_DECODE_CHECKSUM2:
 	
-		// payloadRxAddChecksum(c, 1);
-		
 		if (c == ((_rx_checksum >> 8) & 0xFF)) {
 			ret = payloadRxDone();	
 			
 		} else {
 			// DEBUG
-			//td::cout << "\n second byte error" << std::endl;
+			//GPS_WARN("second byte failure");
 		}
-
-		/*
-		// DEBUG - show incoming byte
-		std::cout << "\n\tchecksum 2: " << std::hex << std::setfill('0') << std::setw(2) << (int) c << " ";
-		std::cout << "\n\tcomparison: " << std::hex << std::setfill('0') << std::setw(4) << (int) _payload_rx_checksum << " " << (int) _rx_checksum << std::endl;
-
-		if (_payload_rx_checksum == _rx_checksum) {
-
-			std::cout << "\nlow: " << std::hex << std::setfill('0') << std::setw(2) << (int) (_payload_rx_checksum & 0xFF) << " " << (int) (_rx_checksum & 0xFF);
-			std::cout << "\nhigh: " << std::hex << std::setfill('0') << std::setw(2) << (int) ((_payload_rx_checksum >> 8) & 0xFF) << " " << (int) ((_rx_checksum >> 8) & 0xFF);
-
-			ret = payloadRxDone();	
-		}
-		*/
 
 		decodeInit();
 		break;
@@ -319,6 +325,10 @@ GPSDriverSBP::payloadRxInit()
 	_rx_state = SBP_RXMSG_HANDLE;	// handle by default
 
 	switch (_rx_msg) {
+
+	case SBP_MSG_HEARTBEAT:
+		// want to always handle the heartbeat message
+		break;
 	
 	case SBP_MSG_POS_LLH:
 		if (_rx_payload_length != sizeof(sbp_payload_rx_pos_llh_t)) {
@@ -347,9 +357,6 @@ GPSDriverSBP::payloadRxInit()
 	case SBP_MSG_OBS:
 		if (_raw_meas == nullptr) {
 			_rx_state = SBP_RXMSG_IGNORE;        // disable if raw measurement not requested
-
-		} else {
-			memset(_raw_meas, 0, sizeof(*_raw_meas));        // initialize raw measurement info
 		}
 		break;
 
@@ -360,17 +367,21 @@ GPSDriverSBP::payloadRxInit()
 
 	switch (_rx_state) {
 	case SBP_RXMSG_HANDLE:	// handle message
-	case SBP_RXMSG_IGNORE:	// ignore message but don't report error
 		ret = 0;
 		break;
 
+	case SBP_RXMSG_IGNORE:	// ignore message but don't report error
+		ret = -1;
+		break;
+
 	case SBP_RXMSG_ERROR_LENGTH:	// error: invalid length
-		//UBX_WARN("ubx msg 0x%04x invalid len %u", SWAP16((unsigned)_rx_msg), (unsigned)_rx_payload_length);
+		GPS_WARN("wrong length!");
+		//GPS_WARN("sbp msg 0x%04x invalid len %u", SWAP16((unsigned)_rx_msg), (unsigned)_rx_payload_length);
 		ret = -1;	// return error, abort handling this message
 		break;
 
 	default:	// invalid message state
-		//UBX_WARN("ubx internal err1");
+		GPS_WARN("sbp internal err1");
 		ret = -1;	// return error, abort handling this message
 		break;
 	}
@@ -417,8 +428,12 @@ GPSDriverSBP::payloadRxAddObs(const uint8_t c)
 
 			_raw_meas->tow = _buf.payload_rx_obs_header.t.tow;
 			_raw_meas->wn = _buf.payload_rx_obs_header.t.wn;
-			_raw_meas->nobs = 0;
 
+			// reset the count of number of observations if this is the first frame of observations
+			if (_rx_obs_frame_index == 0) {
+				_raw_meas->nobs = 0;	
+			}
+			
 			/*
 			std::cout << "\ncount: " << std::hex << std::setfill('0') << std::setw(2) << (int) nobs << std::endl;
 			std::cout << "counta: " << (int) _rx_obs_frame_index << std::endl;
@@ -427,15 +442,13 @@ GPSDriverSBP::payloadRxAddObs(const uint8_t c)
 		}
 
 		if (_rx_payload_index < _rx_payload_length) {  // TODO: may need to limit the number of recorded obs
-			// Still room in _satellite_info: fill Part 2 buffer
+			// Still room in _raw_meas: fill Part 2 buffer
 			unsigned buf_index = (_rx_payload_index - sizeof(sbp_payload_rx_obs_header_t)) % sizeof(sbp_payload_rx_obs_content_t);
 			p_buf[buf_index] = c;
 
 			if (buf_index == sizeof(sbp_payload_rx_obs_content_t) - 1) {
 				// Part 2 complete: decode Part 2 buffer
 				unsigned sat_index = 5*_rx_obs_frame_index + (_rx_payload_index - sizeof(sbp_payload_rx_obs_header_t)) / sizeof(sbp_payload_rx_obs_content_t);
-				std::cout << "\t(" << (int) sat_index << ") sat identifier: " << (int) _buf.payload_rx_obs_content.sid.sat << " " << (int) _buf.payload_rx_obs_content.sid.code << std::endl;
-
 				_raw_meas->psuedorange[sat_index] = _buf.payload_rx_obs_content.P;
 				_raw_meas->carrier_i[sat_index] = _buf.payload_rx_obs_content.L.i;
 				_raw_meas->carrier_f[sat_index] = _buf.payload_rx_obs_content.L.f;
@@ -454,7 +467,8 @@ GPSDriverSBP::payloadRxAddObs(const uint8_t c)
 			_got_obs = true;
 
 			// DEBUG
-			std::cout << "\tgot all observations\n";
+			//GPS_WARN("received all observations");
+			//std::cout << "\tgot all observations\n";
 		}
 		ret = 1;	// payload received completely
 	}
@@ -471,12 +485,20 @@ GPSDriverSBP::payloadRxDone(void)
 
 	switch (_rx_msg) {
 
+		case SBP_MSG_HEARTBEAT:
+			if (!_got_heartbeat) {
+				//GPS_WARN("heartbeat");
+				
+			}
+			//ret = 6;
+			_got_heartbeat = true;
+			break;
+
 		case SBP_MSG_GPS_TIME:
-			//std::cout << "\nparsed time message\n";
 			break;
 
 		case SBP_MSG_DOPS:
-			//std::cout << "\nparsed DOPS message\n";
+			//GPS_WARN("parsed dops");
 
 			_gps_position->hdop = _buf.payload_rx_dops.hdop * 0.01f;	// from cm to m
 			_gps_position->vdop = _buf.payload_rx_dops.vdop * 0.01f;	// from cm to m
@@ -485,20 +507,13 @@ GPSDriverSBP::payloadRxDone(void)
 			break;
 
 		case SBP_MSG_POS_LLH:
+			//GPS_WARN("parsed llh");
 			// DEBUG
-			/*
-			std::cout << "\nparsed LLH message:\n";
-			std::cout << "\ttow: " << std::dec << (long)_buf.payload_rx_pos_llh.tow << std::endl;
-			std::cout << "\tlatitude: " << std::dec << (double)_buf.payload_rx_pos_llh.lat << std::endl;
-			std::cout << "\tlongitude: " << std::dec << (double)_buf.payload_rx_pos_llh.lon << std::endl;
-			std::cout << "\theight: " << std::dec << (double)_buf.payload_rx_pos_llh.height << std::endl;
-			std::cout << "\tn sats: " << std::dec << (int) _buf.payload_rx_pos_llh.n_sats << std::endl;
-			*/
 
-			_gps_position->lat	= (int32_t) _buf.payload_rx_pos_llh.lat * 1.0e7; // TODO: need to put into lat 1E-7
-			_gps_position->lon	= (int32_t) _buf.payload_rx_pos_llh.lon * 1.0e7;
-			_gps_position->alt	= (int32_t) _buf.payload_rx_pos_llh.height * 1.0e3;
-			_gps_position->alt_ellipsoid = (int32_t) _buf.payload_rx_pos_llh.height * 1.0e3;  // TODO: figure out how to make this hieght correct
+			_gps_position->lat	= (int32_t) (_buf.payload_rx_pos_llh.lat * 1.0e7);
+			_gps_position->lon	= (int32_t) (_buf.payload_rx_pos_llh.lon * 1.0e7);
+			_gps_position->alt	= (int32_t) (_buf.payload_rx_pos_llh.height * 1.0e3);
+			_gps_position->alt_ellipsoid = (int32_t) (_buf.payload_rx_pos_llh.height * 1.0e3);  // TODO: figure out how to make this hieght correct
 
 			_gps_position->fix_type = 3;
 			//_gps_position->s_variance_m_s	= (float)_buf.payload_rx_nav_sol.sAcc * 1e-2f;	// from cm to m
@@ -506,28 +521,31 @@ GPSDriverSBP::payloadRxDone(void)
 
 			_gps_position->timestamp = gps_absolute_time();
 
+			_rate_count_lat_lon++;
 			_got_posllh = true;
 
 			ret = 1;
 			break;
 
 		case SBP_MSG_VEL_NED:
-			//std::cout << "\nparsed vel ned message\n";
+			//GPS_WARN("parsed velocity");
 
 			_gps_position->vel_m_s		= 0; // TODO: use the velcity measurements
-			_gps_position->vel_n_m_s	= (float)_buf.payload_rx_vel_ned.n * 1e-3f; /* NED NORTH velocity */
-			_gps_position->vel_e_m_s	= (float)_buf.payload_rx_vel_ned.e * 1e-3f; /* NED EAST velocity */
-			_gps_position->vel_d_m_s	= (float)_buf.payload_rx_vel_ned.d * 1e-3f; /* NED DOWN velocity */
+			_gps_position->vel_n_m_s	= (float)(_buf.payload_rx_vel_ned.n * 1e-3f); /* NED NORTH velocity */
+			_gps_position->vel_e_m_s	= (float)(_buf.payload_rx_vel_ned.e * 1e-3f); /* NED EAST velocity */
+			_gps_position->vel_d_m_s	= (float)(_buf.payload_rx_vel_ned.d * 1e-3f); /* NED DOWN velocity */
 			//_gps_position->cog_rad		= (float)_buf.payload_rx_vel_ned.heading * M_DEG_TO_RAD_F * 1e-5f;  // TODO: need to get this one
 			//_gps_position->c_variance_rad	= (float)_buf.payload_rx_vel_ned.cAcc * M_DEG_TO_RAD_F * 1e-5f;
 			_gps_position->vel_ned_valid	= true;
 
+			_rate_count_vel++;
 			_got_velned = true;
 
 			ret = 1;
 			break;
 
 		case SBP_MSG_OBS:
+			//GPS_WARN("parsed observations");
 
 			_raw_meas->timestamp = gps_absolute_time();
 
@@ -540,7 +558,6 @@ GPSDriverSBP::payloadRxDone(void)
 			break;
 
 		case SBP_MSG_TRACKING_STATE_DETAILED:
-			std::cout << "\nparsed time message\n";
 			break;
 
 		default:
