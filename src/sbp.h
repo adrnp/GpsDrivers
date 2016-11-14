@@ -290,6 +290,7 @@ private:
 	bool					_configured;
 	sbp_decode_state_t		_decode_state;
 	sbp_rxmsg_state_t		_rx_state;
+	uint32_t				_obs_tow;
 
 	/* indices */
 	uint16_t		_rx_payload_index;

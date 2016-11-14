@@ -63,7 +63,8 @@ GPSDriverSBP::GPSDriverSBP(GPSCallbackPtr callback, void *callback_user,
 	_got_velned(false),
 	_got_obs(false),
 	_got_heartbeat(false),
-	_configured(false)
+	_configured(false),
+	_obs_tow(0)
 {
 	decodeInit();
 
@@ -430,15 +431,20 @@ GPSDriverSBP::payloadRxAddObs(const uint8_t c)
 			_raw_meas->wn = _buf.payload_rx_obs_header.t.wn;
 
 			// reset the count of number of observations if this is the first frame of observations
-			if (_rx_obs_frame_index == 0) {
-				_raw_meas->nobs = 0;	
-			}
-			
 			/*
-			std::cout << "\ncount: " << std::hex << std::setfill('0') << std::setw(2) << (int) nobs << std::endl;
-			std::cout << "counta: " << (int) _rx_obs_frame_index << std::endl;
-			std::cout << "countb: " << (int) _rx_obs_frame_count << std::endl;
+			if (_rx_obs_frame_index == 0) {
+				_raw_meas->nobs = 0;
+				_obs_tow = _raw_meas->tow;
+				_rx_obs_frame_sat_index = 0;
+			}
 			*/
+
+			// if we have a new tow, means new set of observations and therefore resetting counters
+			if (_obs_tow != _raw_meas->tow) {
+				_obs_tow = _raw_meas->tow;
+				_raw_meas->nobs = 0;
+			}
+
 		}
 
 		if (_rx_payload_index < _rx_payload_length) {  // TODO: may need to limit the number of recorded obs
@@ -448,7 +454,7 @@ GPSDriverSBP::payloadRxAddObs(const uint8_t c)
 
 			if (buf_index == sizeof(sbp_payload_rx_obs_content_t) - 1) {
 				// Part 2 complete: decode Part 2 buffer
-				unsigned sat_index = 5*_rx_obs_frame_index + (_rx_payload_index - sizeof(sbp_payload_rx_obs_header_t)) / sizeof(sbp_payload_rx_obs_content_t);
+				unsigned sat_index = _raw_meas->nobs; //5*_rx_obs_frame_sat_index + (_rx_payload_index - sizeof(sbp_payload_rx_obs_header_t)) / sizeof(sbp_payload_rx_obs_content_t);
 				_raw_meas->psuedorange[sat_index] = _buf.payload_rx_obs_content.P;
 				_raw_meas->carrier_i[sat_index] = _buf.payload_rx_obs_content.L.i;
 				_raw_meas->carrier_f[sat_index] = _buf.payload_rx_obs_content.L.f;
@@ -468,7 +474,6 @@ GPSDriverSBP::payloadRxAddObs(const uint8_t c)
 
 			// DEBUG
 			//GPS_WARN("received all observations");
-			//std::cout << "\tgot all observations\n";
 		}
 		ret = 1;	// payload received completely
 	}
