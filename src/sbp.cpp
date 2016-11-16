@@ -508,6 +508,9 @@ GPSDriverSBP::payloadRxDone(void)
 			_gps_position->hdop = _buf.payload_rx_dops.hdop * 0.01f;	// from cm to m
 			_gps_position->vdop = _buf.payload_rx_dops.vdop * 0.01f;	// from cm to m
 
+			_gps_position->eph = _buf.payload_rx_dops.hdop * 0.01f;	// from cm to m
+			_gps_position->epv = _buf.payload_rx_dops.vdop * 0.01f;	// from cm to m
+
 			ret = 1;
 			break;
 
