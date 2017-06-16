@@ -298,6 +298,12 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 		return -1;
 	}
 
+	// configure RXM-RAWX message - though don't really care if it fails
+	if (!configureMessageRateAndAck(UBX_MSG_RXM_RAWX, 5, true)) {
+		// nothing here, don't care if it fails on a non-supported receiver
+		// TODO: some setting to handle wanting this or not
+	}
+
 	/* request module version information by sending an empty MON-VER message */
 	if (!sendMessage(UBX_MSG_MON_VER, nullptr, 0)) {
 		return -1;
@@ -730,6 +736,16 @@ GPSDriverUBX::payloadRxInit()
 			_rx_state = UBX_RXMSG_DISABLE;        // disable if using NAV-PVT instead
 		}
 
+		break;
+
+	case UBX_MSG_RXM_RAWX:
+		// don't actually care to parse the message just yet
+		// just want to make sure the message doesn't get disabled
+		// goal - logging the raw bytes from the ublox (outside of this driver)
+		if (_rx_payload_length >= sizeof(ubx_buf_t)) {
+			_rx_payload_length = sizeof(ubx_buf_t) - 1; //avoid buffer overflow
+		}
+		_rx_state = UBX_RXMSG_IGNORE;  // ignore the message for now
 		break;
 
 	case UBX_MSG_MON_VER:

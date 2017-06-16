@@ -92,7 +92,7 @@
 #define UBX_ID_RTCM3_1005	0x05
 #define UBX_ID_RTCM3_1077	0x4D
 #define UBX_ID_RTCM3_1087	0x57
-#define UBX_ID_RXM_RAW		0x15
+#define UBX_ID_RXM_RAWX		0x15
 
 /* Message Classes & IDs */
 #define UBX_MSG_NAV_POSLLH	((UBX_CLASS_NAV) | UBX_ID_NAV_POSLLH << 8)
@@ -122,7 +122,7 @@
 #define UBX_MSG_RTCM3_1005	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1005 << 8)
 #define UBX_MSG_RTCM3_1077	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1077 << 8)
 #define UBX_MSG_RTCM3_1087	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1087 << 8)
-#define UBX_MSG_RXM_RAW		((UBX_CLASS_RXM) | UBX_ID_RXM_RAW << 8)
+#define UBX_MSG_RXM_RAWX	((UBX_CLASS_RXM) | UBX_ID_RXM_RAWX << 8)
 
 /* RX NAV-PVT message content details */
 /*   Bitfield "valid" masks */
