@@ -299,7 +299,7 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 	}
 
 	// configure RXM-RAWX message - though don't really care if it fails
-	if (!configureMessageRateAndAck(UBX_MSG_RXM_RAWX, 1, true)) {
+	if (!configureMessageRateAndAck(UBX_MSG_RXM_RAWX, 5, true)) {
 		// nothing here, don't care if it fails on a non-supported receiver
 		// TODO: some setting to handle wanting this or not
 	}
