@@ -255,6 +255,7 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 	/* can send multiple configurations at once */
 	memset(&_buf.payload_tx_cfg_gnss, 0, sizeof(_buf.payload_tx_cfg_gnss));
 	_buf.payload_tx_cfg_gnss.msgVer = 0;
+	_buf.payload_tx_cfg_gnss.numTrkChUse = 0xFF;
 	_buf.payload_tx_cfg_gnss.numConfigBlocks = 1;
 	
 	_buf.payload_tx_cfg_gnss.blocks[0].gnssId = UBX_TX_CFG_GNSS_ID_GALILEO;
