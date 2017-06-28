@@ -250,6 +250,28 @@ GPSDriverUBX::configure(unsigned &baudrate, OutputMode output_mode)
 
 #endif
 
+	/* send a GNSS message to enable galileo */
+	/* message is made up of 2 parts, with second part potentially a block of different configs */
+	/* can send multiple configurations at once */
+	memset(&_buf.payload_tx_cfg_gnss, 0, sizeof(_buf.payload_tx_cfg_gnss));
+	_buf.payload_tx_cfg_gnss.msgVer = 0;
+	_buf.payload_tx_cfg_gnss.numConfigBlocks = 1;
+	
+	_buf.payload_tx_cfg_gnss.blocks[0].gnssId = UBX_TX_CFG_GNSS_ID_GALILEO;
+	_buf.payload_tx_cfg_gnss.blocks[0].resTrkCh = 4;
+	_buf.payload_tx_cfg_gnss.blocks[0].maxTrkCh = 8;
+	_buf.payload_tx_cfg_gnss.blocks[0].flags = UBX_TX_CFG_GNSS_FLAGS_ENABLE;
+
+	
+	if (!sendMessage(UBX_MSG_CFG_GNSS, (uint8_t *)&_buf, sizeof(_buf.payload_tx_cfg_gnss))) {
+		return -1;
+	}
+
+	/* no ACK is expected here, but read the buffer anyway in case we actually get an ACK */
+	waitForAck(UBX_MSG_CFG_GNSS, UBX_CONFIG_TIMEOUT, false);
+	
+
+
 	/* configure message rates */
 	/* the last argument is divisor for measurement rate (set by CFG RATE), i.e. 1 means 5Hz */
 

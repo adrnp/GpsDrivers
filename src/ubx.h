@@ -87,6 +87,7 @@
 #define UBX_ID_CFG_NAV5		0x24
 #define UBX_ID_CFG_SBAS		0x16
 #define UBX_ID_CFG_TMODE3	0x71
+#define UBX_ID_CFG_GNSS		0x3E
 #define UBX_ID_MON_VER		0x04
 #define UBX_ID_MON_HW		0x09
 #define UBX_ID_RTCM3_1005	0x05
@@ -117,6 +118,7 @@
 #define UBX_MSG_CFG_NAV5	((UBX_CLASS_CFG) | UBX_ID_CFG_NAV5 << 8)
 #define UBX_MSG_CFG_SBAS	((UBX_CLASS_CFG) | UBX_ID_CFG_SBAS << 8)
 #define UBX_MSG_CFG_TMODE3	((UBX_CLASS_CFG) | UBX_ID_CFG_TMODE3 << 8)
+#define UBX_MSG_CFG_GNSS	((UBX_CLASS_CFG) | UBX_ID_CFG_GNSS << 8)
 #define UBX_MSG_MON_HW		((UBX_CLASS_MON) | UBX_ID_MON_HW << 8)
 #define UBX_MSG_MON_VER		((UBX_CLASS_MON) | UBX_ID_MON_VER << 8)
 #define UBX_MSG_RTCM3_1005	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1005 << 8)
@@ -176,6 +178,17 @@
 #define UBX_TX_CFG_TMODE3_FLAGS     	1 	    	/**< start survey-in */
 #define UBX_TX_CFG_TMODE3_SVINMINDUR    (3*60)		/**< survey-in: minimum duration [s] (higher=higher precision) */
 #define UBX_TX_CFG_TMODE3_SVINACCLIMIT  (10000)	/**< survey-in: position accuracy limit 0.1[mm] */
+
+/* TX CFG-GNSS message contents */
+#define UBX_TX_CFG_GNSS_ID_GPS		0
+#define UBX_TX_CFG_GNSS_ID_SBAS		1
+#define UBX_TX_CFG_GNSS_ID_GALILEO	2
+#define UBX_TX_CFG_GNSS_ID_BEIDOU	3
+#define UBX_TX_CFG_GNSS_ID_QZSS		5
+#define UBX_TX_CFG_GNSS_ID_GLONASS	6
+#define UBX_TX_CFG_GNSS_FLAGS_ENABLE	((1<<24) | (1<<16) | 0x01)
+#define UBX_TX_CFG_GNSS_FLAGS_DISABLE	((1<<24) | (1<<16) | 0x00)
+
 
 /* RTCM3 */
 #define RTCM3_PREAMBLE					0xD3
@@ -509,6 +522,25 @@ typedef struct {
 	uint8_t     reserved3[8];
 } ubx_payload_tx_cfg_tmode3_t;
 
+/* tx CFG-GNSS ublox 8 */
+typedef struct {
+	uint8_t gnssId;
+	uint8_t resTrkCh;
+	uint8_t maxTrkCh;
+	uint8_t reserved;
+	uint32_t flags;
+} ubx_payload_tx_cfg_gnss_block_t;
+
+typedef struct {
+	uint8_t msgVer;
+	uint8_t numTrkChHw;
+	uint8_t numTrkChUse;
+	uint8_t numConfigBlocks;
+	ubx_payload_tx_cfg_gnss_block_t blocks[1];
+} ubx_payload_tx_cfg_gnss_t;
+
+
+
 /* General message and payload buffer union */
 typedef union {
 	ubx_payload_rx_nav_pvt_t		payload_rx_nav_pvt;
@@ -532,6 +564,7 @@ typedef union {
 	ubx_payload_tx_cfg_sbas_t		payload_tx_cfg_sbas;
 	ubx_payload_tx_cfg_msg_t		payload_tx_cfg_msg;
 	ubx_payload_tx_cfg_tmode3_t		payload_tx_cfg_tmode3;
+	ubx_payload_tx_cfg_gnss_t 		payload_tx_cfg_gnss;
 } ubx_buf_t;
 
 #pragma pack(pop)
