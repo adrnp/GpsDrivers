@@ -57,11 +57,10 @@
 #define SBF_WARN(...)		{GPS_WARN(__VA_ARGS__);}
 #define SBF_DEBUG(...)		{/*GPS_WARN(__VA_ARGS__);*/}
 
-GPSDriverSBF::GPSDriverSBF(Interface gpsInterface, GPSCallbackPtr callback, void *callback_user,
+GPSDriverSBF::GPSDriverSBF(GPSCallbackPtr callback, void *callback_user,
 			   struct vehicle_gps_position_s *gps_position)
 	: GPSHelper(callback, callback_user)
 	, _gps_position(gps_position)
-	, _interface(gpsInterface)
 {
 	decodeInit();
 }
@@ -290,13 +289,13 @@ GPSDriverSBF::payloadRxDone()
 
 		_gps_position->lat		= (int32_t)(_buf.payload_rx_pvt_geo.lat*M_RAD_TO_DEG*1e7);
 		_gps_position->lon		= (int32_t)(_buf.payload_rx_pvt_geo.lon*M_RAD_TO_DEG*1e7);
-		_gps_position->alt		= (int32_t)((_buf.payload_rx_pvt_geo.height - _buf.payload_rx_pvt_geo.undulation)*1e3);
+		_gps_position->alt		= (int32_t)((_buf.payload_rx_pvt_geo.height - (double)_buf.payload_rx_pvt_geo.undulation)*1e3);
 		_gps_position->alt_ellipsoid	= (int32_t)(_buf.payload_rx_pvt_geo.height*1e3);
 
 		_gps_position->eph		= _buf.payload_rx_pvt_geo.hAccuracy * 1e2f;
 		_gps_position->epv		= _buf.payload_rx_pvt_geo.vAccuracy * 1e2f;
 		
-		if (_buf.payload_rx_pvt_geo.vn != DNU_FLOAT) {
+		if (_buf.payload_rx_pvt_geo.vn > DNU_FLOAT) {
 			//_gps_position->s_variance_m_s	= // TODO: get the variance for the velocity
 			_gps_position->vel_n_m_s	= _buf.payload_rx_pvt_geo.vn;
 			_gps_position->vel_e_m_s	= _buf.payload_rx_pvt_geo.ve;
@@ -307,7 +306,7 @@ GPSDriverSBF::payloadRxDone()
 		}
 
 
-		if (_buf.payload_rx_pvt_geo.cog != DNU_FLOAT) {
+		if (_buf.payload_rx_pvt_geo.cog > DNU_FLOAT) {
 			_gps_position->cog_rad = _buf.payload_rx_pvt_geo.cog * M_DEG_TO_RAD_F;
 			//_gps_position->c_variance_rad = // TODO: get cog variance
 		}

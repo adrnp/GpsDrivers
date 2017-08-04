@@ -182,8 +182,7 @@ typedef enum {
 class GPSDriverSBF : public GPSHelper
 {
 public:
-	GPSDriverSBF(Interface gpsInterface, GPSCallbackPtr callback, void *callback_user,
-		     struct vehicle_gps_position_s *gps_position);
+	GPSDriverSBF(GPSCallbackPtr callback, void *callback_user, struct vehicle_gps_position_s *gps_position);
 	virtual ~GPSDriverSBF();
 	int receive(unsigned timeout);
 	int configure(unsigned &baudrate, OutputMode output_mode);
@@ -232,8 +231,6 @@ private:
 	gps_abstime		_disable_cmd_last{0};
 	sbf_buf_t		_buf{};
 	OutputMode		_output_mode{OutputMode::GPS};
-
-	const Interface		_interface;
 };
 
 #endif /* SBF_H_ */
