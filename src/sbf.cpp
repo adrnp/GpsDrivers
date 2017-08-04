@@ -292,8 +292,8 @@ GPSDriverSBF::payloadRxDone()
 		_gps_position->alt		= (int32_t)((_buf.payload_rx_pvt_geo.height - (double)_buf.payload_rx_pvt_geo.undulation)*1e3);
 		_gps_position->alt_ellipsoid	= (int32_t)(_buf.payload_rx_pvt_geo.height*1e3);
 
-		_gps_position->eph		= _buf.payload_rx_pvt_geo.hAccuracy * 1e2f;
-		_gps_position->epv		= _buf.payload_rx_pvt_geo.vAccuracy * 1e2f;
+		_gps_position->eph		= _buf.payload_rx_pvt_geo.hAccuracy * 0.01f;
+		_gps_position->epv		= _buf.payload_rx_pvt_geo.vAccuracy * 0.01f;
 		
 		if (_buf.payload_rx_pvt_geo.vn > DNU_FLOAT) {
 			//_gps_position->s_variance_m_s	= // TODO: get the variance for the velocity
