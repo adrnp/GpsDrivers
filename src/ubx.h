@@ -63,6 +63,7 @@
 #define UBX_CLASS_CFG		0x06
 #define UBX_CLASS_MON		0x0A
 #define UBX_CLASS_RTCM3	0xF5
+#define UBX_CLASS_RXM		0x02
 
 /* Message IDs */
 #define UBX_ID_NAV_POSLLH	0x02
