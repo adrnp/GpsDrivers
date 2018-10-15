@@ -96,6 +96,7 @@
 #define UBX_ID_MON_VER		0x04
 #define UBX_ID_MON_HW		0x09 // deprecated in protocol version >= 27 -> use MON_RF
 #define UBX_ID_MON_RF		0x38
+#define UBX_ID_RXM_RAWX		0x15
 
 /* UBX ID for RTCM3 output messages */
 /* Minimal messages for RTK: 1005, 1077 + (1087 or 1127) */
@@ -111,7 +112,7 @@
 #define UBX_ID_RTCM3_1127	0x7F	/**< BeiDou MSM7 */
 #define UBX_ID_RTCM3_1230	0xE6	/**< GLONASS code-phase biases */
 #define UBX_ID_RTCM3_4072	0xFE	/**< Reference station PVT (u-blox proprietary RTCM Message) - Used for moving baseline */
-#define UBX_ID_RXM_RAWX		0x15
+
 
 /* Message Classes & IDs */
 #define UBX_MSG_NAV_POSLLH	((UBX_CLASS_NAV) | UBX_ID_NAV_POSLLH << 8)
@@ -144,6 +145,7 @@
 #define UBX_MSG_MON_HW		((UBX_CLASS_MON) | UBX_ID_MON_HW << 8)
 #define UBX_MSG_MON_VER		((UBX_CLASS_MON) | UBX_ID_MON_VER << 8)
 #define UBX_MSG_MON_RF		((UBX_CLASS_MON) | UBX_ID_MON_RF << 8)
+#define UBX_MSG_RXM_RAWX	((UBX_CLASS_RXM) | UBX_ID_RXM_RAWX << 8)
 #define UBX_MSG_RTCM3_1005	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1005 << 8)
 #define UBX_MSG_RTCM3_1077	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1077 << 8)
 #define UBX_MSG_RTCM3_1087	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1087 << 8)
@@ -155,7 +157,7 @@
 #define UBX_MSG_RTCM3_1127	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1127 << 8)
 #define UBX_MSG_RTCM3_1230	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_1230 << 8)
 #define UBX_MSG_RTCM3_4072	((UBX_CLASS_RTCM3) | UBX_ID_RTCM3_4072 << 8)
-#define UBX_MSG_RXM_RAWX	((UBX_CLASS_RXM) | UBX_ID_RXM_RAWX << 8)
+
 
 /* RX NAV-PVT message content details */
 /*   Bitfield "valid" masks */
@@ -206,7 +208,9 @@
 #define UBX_TX_CFG_NAV5_MASK		0x0005		/**< Only update dynamic model and fix mode */
 #define UBX_TX_CFG_NAV5_FIXMODE		2		/**< 1 2D only, 2 3D only, 3 Auto 2D/3D */
 
-/* TX CFG-GNSS message contents */
+/* TX CFG-GNSS message contents
+ * TODO: check to see how this would be implemented in version 27+
+ */
 #define UBX_TX_CFG_GNSS_ID_GPS		0
 #define UBX_TX_CFG_GNSS_ID_SBAS		1
 #define UBX_TX_CFG_GNSS_ID_GALILEO	2
