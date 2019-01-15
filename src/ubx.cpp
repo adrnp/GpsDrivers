@@ -1001,23 +1001,29 @@ GPSDriverUBX::payloadRxInit()
 		break;
 
 	case UBX_MSG_NAV_HPPOSECEF:
-		// don't actually care to parse the message just yet
-		// just want to make sure the message doesn't get disabled
-		// goal - logging the raw bytes from the ublox (outside of this driver)
-		if (_rx_payload_length >= sizeof(ubx_buf_t)) {
-			_rx_payload_length = sizeof(ubx_buf_t) - 1; //avoid buffer overflow
+
+		// TODO: figure out some conditions to check if actually want this
+		if (_rx_payload_length != sizeof(ubx_payload_rx_nav_hpposecef_t)) {
+			_rx_state = UBX_RXMSG_ERROR_LENGTH;
+
+		} else if (!_configured) {
+			_rx_state = UBX_RXMSG_IGNORE;        // ignore if not _configured
+
 		}
-		_rx_state = UBX_RXMSG_IGNORE;  // ignore the message for now
+
 		break;
 
 	case UBX_MSG_NAV_HPPOSLLH:
-		// don't actually care to parse the message just yet
-		// just want to make sure the message doesn't get disabled
-		// goal - logging the raw bytes from the ublox (outside of this driver)
-		if (_rx_payload_length >= sizeof(ubx_buf_t)) {
-			_rx_payload_length = sizeof(ubx_buf_t) - 1; //avoid buffer overflow
+
+		// TODO: figure out some conditions to check if actually want this
+		if (_rx_payload_length != sizeof(ubx_payload_rx_nav_hpposllh_t)) {
+			_rx_state = UBX_RXMSG_ERROR_LENGTH;
+
+		} else if (!_configured) {
+			_rx_state = UBX_RXMSG_IGNORE;        // ignore if not _configured
+
 		}
-		_rx_state = UBX_RXMSG_IGNORE;  // ignore the message for now
+
 		break;
 
 	case UBX_MSG_NAV_SOL:
