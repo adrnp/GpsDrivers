@@ -885,6 +885,10 @@ GPSDriverUBX::parseChar(const uint8_t b)
 			ret = payloadRxAddNavSat(b);  // add a NAV-SAT payload byte
 			break;
 
+		case UBX_MSG_RXM_RAWX:
+			ret = payloadRxAddRxmRawx(b);	// add a RXM-RAWX payload byte
+			break;
+
 		case UBX_MSG_MON_VER:
 			ret = payloadRxAddMonVer(b);	// add a MON-VER payload byte
 			break;
@@ -1113,14 +1117,12 @@ GPSDriverUBX::payloadRxInit()
 
 		break;
 
-	case UBX_MSG_RXM_RAWX:
-		// don't actually care to parse the message just yet
-		// just want to make sure the message doesn't get disabled
-		// goal - logging the raw bytes from the ublox (outside of this driver)
-		if (_rx_payload_length >= sizeof(ubx_buf_t)) {
-			_rx_payload_length = sizeof(ubx_buf_t) - 1; //avoid buffer overflow
+	case UBX_MSG_RXM_RAWX:		
+		// TODO: right now all should be handled in the specific payload adding function
+		if (!_configured) {
+			_rx_state = UBX_RXMSG_IGNORE;  // ignore if not _configured
 		}
-		_rx_state = UBX_RXMSG_IGNORE;  // ignore the message for now
+
 		break;
 
 	case UBX_MSG_MON_VER:
@@ -1444,6 +1446,44 @@ GPSDriverUBX::payloadRxAddMonRf(const uint8_t b)
 
 			_gps_position->noise_per_ms		= _buf.payload_rx_mon_rf_part2.noisePerMS;
 			_gps_position->jamming_indicator	= _buf.payload_rx_mon_rf_part2.jamInd;
+		}
+	}
+
+	if (++_rx_payload_index >= _rx_payload_length) {
+		ret = 1;	// payload received completely
+	}
+
+	return ret;
+}
+
+/**
+ * Add RXM-RAWX payload rx byte
+ */
+int // -1 = error, 0 = ok, 1 = payload completed
+GPSDriverUBX::payloadRxAddRxmRawx(const uint8_t b)
+{
+	int ret = 0;
+	uint8_t *p_buf = (uint8_t *)&_buf;
+
+	if (_rx_payload_index < sizeof(ubx_payload_rx_rxm_rawx_part1_t)) {
+		// Fill Part 1 buffer
+		p_buf[_rx_payload_index] = b;
+
+	} else {
+		if (_rx_payload_index == sizeof(ubx_payload_rx_rxm_rawx_part1_t)) {
+			// Part 1 complete: decode Part 1 buffer
+
+			// TODO: can get the number of raw measurements and some of the GPS time information
+		}
+
+		// fill Part 2 buffer
+		unsigned buf_index = (_rx_payload_index - sizeof(ubx_payload_rx_rxm_rawx_part1_t)) % sizeof(
+					     ubx_payload_rx_rxm_rawx_part12_t);
+		p_buf[buf_index] = b;
+
+		if (buf_index == sizeof(ubx_payload_rx_mon_ver_part2_t) - 1) {
+			// TODO: this would be the end of one of the raw measurements
+			// TODO: figure out how want to handle this here...
 		}
 	}
 
@@ -1790,6 +1830,14 @@ GPSDriverUBX::payloadRxDone()
 	case UBX_MSG_MON_RF:
 		UBX_TRACE_RXMSG("Rx MON-RF");
 		// already populated in payloadRxAddMonRf
+		ret = 1;
+		break;
+
+	case UBX_MSG_RXM_RAWX:
+		UBX_TRACE_RXMSG("Rx RXM-RAWX");
+
+		// NOTE: should be already handled in the payloadRxAddRxmRawx fn
+		// TODO: may want to add time information or something
 		ret = 1;
 		break;
 

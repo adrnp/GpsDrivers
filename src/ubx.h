@@ -612,6 +612,35 @@ typedef struct {
 	uint8_t		extension[30];
 } ubx_payload_rx_mon_ver_part2_t;
 
+/* Rx RXM-RAWX Part 1 */
+typedef struct {
+	double 		rcvTow; 	/**< Measurement time of week approx aligned to GPS time [s] */
+	uint16_t 	week; 		/**< GPS week number [weeks] */
+	int8_t 		leapS;		/**< GPS leap seconds (GPS - UTC) [s] */
+	uint8_t 	numMeas; 	/**< Number of measurements in set */
+	uint8_t 	recStat; 	/**< Receiver tracking status bitfield */
+	uint8_t		version; 
+	uint8_t 	reserved1[2];
+} ubx_payload_rx_rxm_rawx_part1_t;
+
+/* Rx RXM-RAWX Part 2 */
+typedef struct {
+	double 		prMes;		/**< Pseudorange measurement [m] */
+	double 		cpMes;		/**< Carrier phase measurement [cycles] */
+	float 		doMes;		/**< doppler measurement [Hz] */
+	uint8_t 	gnssId;
+	uint8_t 	svId;
+	uint8_t 	sigId;		/**< New style signal identifier */
+	uint8_t 	freqId;		/**< GLONASS only */
+	uint16_t 	locktime;	/**< Carrier phase locktime counter [ms] */
+	uint8_t 	cno;		/**< Carrier to noise density ratio [dB-Hz] */
+	uint8_t 	prStdev;	/**< Estimated pseudorange measurement standard deviation [0.001*2^n m] */
+	uint8_t 	cpStdev;	/**< Estimated carrier phase measurement standard deviation [0.004 cycles] */
+	uint8_t		doStdev;	/**< Estimated dopper measurement standard deviation [0.002*2^n Hz] */
+	uint8_t		trkStat;	/**< Tracking status bitfield */
+	uint8_t		reserved2;
+} ubx_payload_rx_rxm_rawx_part2_t;
+
 /* Rx ACK-ACK */
 typedef	union {
 	uint16_t	msg;
@@ -773,6 +802,8 @@ typedef union {
 	ubx_payload_rx_mon_rf_part2_t		payload_rx_mon_rf_part2;
 	ubx_payload_rx_mon_ver_part1_t		payload_rx_mon_ver_part1;
 	ubx_payload_rx_mon_ver_part2_t		payload_rx_mon_ver_part2;
+	ubx_payload_rx_rxm_rawx_part1_t		payload_rx_rxm_rawx_part1;
+	ubx_payload_rx_rxm_rawx_part2_t		payload_rx_rxm_rawx_part2;
 	ubx_payload_rx_ack_ack_t		payload_rx_ack_ack;
 	ubx_payload_rx_ack_nak_t		payload_rx_ack_nak;
 	ubx_payload_tx_cfg_prt_t		payload_tx_cfg_prt;
@@ -866,6 +897,7 @@ private:
 	int payloadRxAddNavSat(const uint8_t b);
 	int payloadRxAddMonVer(const uint8_t b);
 	int payloadRxAddMonRf(const uint8_t b);
+	int payloadRxAddRxmRawx(const uint8_t b);
 
 	/**
 	 * Finish payload rx
