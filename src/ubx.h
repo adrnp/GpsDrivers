@@ -345,6 +345,38 @@ typedef struct {
 	uint32_t	vAcc;  		/**< Vertical accuracy estimate [mm] */
 } ubx_payload_rx_nav_posllh_t;
 
+/* Rx NAV-HPPOSLLH (ubx9+) */
+typedef struct {
+	uint8_t 	version;
+	uint8_t		reserved1[3];
+	uint32_t 	iTOW;		/**< GPS Time of Week [ms] */
+	int32_t 	lon;		/**< Longitude [1e-7 deg] */
+	int32_t 	lat;		/**< Latitude [1e-7 deg] */
+	int32_t 	height;		/**< Height above ellipsoid [mm] */
+	int32_t 	hMSL;		/**< Height above mean sea level [mm] */
+	int8_t 		lonHp;		/**< High precision component of longitude [1e-9 deg] */
+	int8_t 		latHp;		/**< High precision component of latitude [1e-9 deg] */
+	int8_t 		heightHp;	/** < High precision component of height above ellipsoid [0.1 mm] */
+	int8_t 		hMSLHp;		/** < High precision component of height above mean sea level [0.1 mm] */
+	uint32_t	hAcc;  		/**< Horizontal accuracy estimate [0.1 mm] */
+	uint32_t	vAcc;  		/**< Vertical accuracy estimate [0.1 mm] */
+} ubx_payload_rx_nav_hpposllh_t;
+
+/* Rx NAV-HPPOSECEF (ubx9+) */
+typedef struct {
+	uint8_t 	version;
+	uint8_t		reserved1[3];
+	uint32_t 	iTOW;		/**< GPS Time of Week [ms] */
+	int32_t 	ecefX;		/**< ECEF X coordinate [cm] */
+	int32_t 	ecefY;		/**< ECEF Y coordinate [cm] */
+	int32_t 	ecefZ;		/**< ECEF Z coordinate [cm] */
+	int8_t	 	ecefXHp;	/**< High precision ECEF X coordinate [0.1 mm] */
+	int8_t	 	ecefYHp;	/**< High precision ECEF Y coordinate [0.1 mm] */
+	int8_t	 	ecefZHp;	/**< High precision ECEF Z coordinate [0.1 mm] */
+	uint8_t 	reserved2;
+	uint32_t 	pAcc;		/**< position accuracy estimate [0.1 mm] */
+} ubx_payload_rx_nav_hpposecef_t;
+
 /* Rx NAV-DOP */
 typedef struct {
 	uint32_t	iTOW;		/**< GPS Time of Week [ms] */
@@ -724,6 +756,8 @@ typedef struct {
 typedef union {
 	ubx_payload_rx_nav_pvt_t		payload_rx_nav_pvt;
 	ubx_payload_rx_nav_posllh_t		payload_rx_nav_posllh;
+	ubx_payload_rx_nav_hpposllh_t 	payload_rx_nav_hpposllh;
+	ubx_payload_rx_nav_hpposecef_t 	payload_rx_nav_hpposecef;
 	ubx_payload_rx_nav_sol_t		payload_rx_nav_sol;
 	ubx_payload_rx_nav_dop_t		payload_rx_nav_dop;
 	ubx_payload_rx_nav_timeutc_t		payload_rx_nav_timeutc;

@@ -1598,6 +1598,22 @@ GPSDriverUBX::payloadRxDone()
 		ret = 1;
 		break;
 
+	case UBX_MSG_NAV_HPPOSLLH:
+		UBX_TRACE_RXMSG("Rx NAV-HPPOSLLH");
+
+		// TODO: decide if want to pass this info to the gps position object
+		// TODO: decide how might want to handle the high precision stuff
+
+		ret = 1;
+		break;
+
+	case UBX_MSG_NAV_HPPOSECEF:
+		UBX_TRACE_RXMSG("Rx NAV-HPPOSECEF");
+
+
+		ret = 1;
+		break;
+
 	case UBX_MSG_NAV_SOL:
 		UBX_TRACE_RXMSG("Rx NAV-SOL");
 
