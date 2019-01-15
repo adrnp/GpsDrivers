@@ -889,6 +889,9 @@ GPSDriverUBX::parseChar(const uint8_t b)
 			ret = payloadRxAddMonVer(b);	// add a MON-VER payload byte
 			break;
 
+		case UBX_MSG_MON_RF:
+			ret = payloadRxAddMonRf(b);		// add a MON-RF payload byte
+
 		default:
 			ret = payloadRxAdd(b);		// add a payload byte
 			break;
@@ -1404,6 +1407,48 @@ GPSDriverUBX::payloadRxAddMonVer(const uint8_t b)
 }
 
 /**
+ * Add MON-RF payload rx byte
+ */
+int	// -1 = error, 0 = ok, 1 = payload completed
+GPSDriverUBX::payloadRxAddMonRf(const uint8_t b)
+{
+	int ret = 0;
+	uint8_t *p_buf = (uint8_t *)&_buf;
+
+	if (_rx_payload_index < sizeof(ubx_payload_rx_mon_rf_part1_t)) {
+		// Fill Part 1 buffer
+		p_buf[_rx_payload_index] = b;
+
+	} else {
+		if (_rx_payload_index == sizeof(ubx_payload_rx_mon_rf_part1_t)) {
+			// Part 1 complete: TODO: potentially might want to decode the number of blocks to expect
+			// TODO: if want to keep hold of the info for multiple blocks, need to decide what to do here
+
+			// right now there is no information of interested in the first block...
+		}
+
+		// fill Part 2 buffer
+		unsigned buf_index = (_rx_payload_index - sizeof(ubx_payload_rx_mon_rf_part1_t)) % sizeof(
+					     ubx_payload_rx_mon_rf_part2_t);
+		p_buf[buf_index] = b;
+
+		if (buf_index == sizeof(ubx_payload_rx_mon_ver_part2_t) - 1) {
+			// save the information for the rf information
+			// NOTE: this effectively saves the data for the last block, not the first block
+
+			_gps_position->noise_per_ms		= _buf.payload_rx_mon_rf_part2.noisePerMS;
+			_gps_position->jamming_indicator	= _buf.payload_rx_mon_rf_part2.jamInd;
+		}
+	}
+
+	if (++_rx_payload_index >= _rx_payload_length) {
+		ret = 1;	// payload received completely
+	}
+
+	return ret;
+}
+
+/**
  * Finish payload rx
  */
 int	// 0 = no message handled, 1 = message handled, 2 = sat info message handled
@@ -1722,10 +1767,7 @@ GPSDriverUBX::payloadRxDone()
 
 	case UBX_MSG_MON_RF:
 		UBX_TRACE_RXMSG("Rx MON-RF");
-
-		_gps_position->noise_per_ms		= _buf.payload_rx_mon_rf.block[0].noisePerMS;
-		_gps_position->jamming_indicator	= _buf.payload_rx_mon_rf.block[0].jamInd;
-
+		// already populated in payloadRxAddMonRf
 		ret = 1;
 		break;
 

@@ -544,31 +544,30 @@ typedef struct {
 	uint32_t	pullL;
 } ubx_payload_rx_mon_hw_ubx7_t;
 
-/* Rx MON-RF (replaces MON-HW, protocol 27+) */
+/* Rx MON-RF Part 1 (Parts 1 and 2 replace MON-HW, protocol 27+) */
 typedef struct {
 	uint8_t version;
 	uint8_t nBlocks;         /**< number of RF blocks included */
 	uint8_t reserved1[2];
+} ubx_payload_rx_mon_rf_part1_t;
 
-	struct ubx_payload_rx_mon_rf_block_t {
-		uint8_t blockId;     /**< RF block id */
-		uint8_t flags;       /**< jammingState */
-		uint8_t antStatus;   /**< Status of the antenna superior state machine */
-		uint8_t antPower;    /**< Current power status of antenna */
-		uint32_t postStatus; /**< POST status word */
-		uint8_t reserved2[4];
-		uint16_t noisePerMS; /**< Noise level as measured by the GPS core */
-		uint16_t agcCnt;     /**< AGC Monitor (counts SIGI xor SIGLO, range 0 to 8191 */
-		uint8_t jamInd;      /**< CW jamming indicator, scaled (0=no CW jamming, 255=strong CW jamming) */
-		int8_t ofsI;         /**< Imbalance of I-part of complex signal */
-		uint8_t magI;        /**< Magnitude of I-part of complex signal (0=no signal, 255=max magnitude) */
-		int8_t ofsQ;         /**< Imbalance of Q-part of complex signal */
-		uint8_t magQ;        /**< Magnitude of Q-part of complex signal (0=no signal, 255=max magnitude) */
-		uint8_t reserved3[3];
-	};
-
-	ubx_payload_rx_mon_rf_block_t block[1]; ///< only read out the first block
-} ubx_payload_rx_mon_rf_t;
+/* Rx MON-RF Part 2 (repeated) */
+typedef struct {
+	uint8_t blockId;     /**< RF block id */
+	uint8_t flags;       /**< jammingState */
+	uint8_t antStatus;   /**< Status of the antenna superior state machine */
+	uint8_t antPower;    /**< Current power status of antenna */
+	uint32_t postStatus; /**< POST status word */
+	uint8_t reserved2[4];
+	uint16_t noisePerMS; /**< Noise level as measured by the GPS core */
+	uint16_t agcCnt;     /**< AGC Monitor (counts SIGI xor SIGLO, range 0 to 8191 */
+	uint8_t jamInd;      /**< CW jamming indicator, scaled (0=no CW jamming, 255=strong CW jamming) */
+	int8_t ofsI;         /**< Imbalance of I-part of complex signal */
+	uint8_t magI;        /**< Magnitude of I-part of complex signal (0=no signal, 255=max magnitude) */
+	int8_t ofsQ;         /**< Imbalance of Q-part of complex signal */
+	uint8_t magQ;        /**< Magnitude of Q-part of complex signal (0=no signal, 255=max magnitude) */
+	uint8_t reserved3[3];
+} ubx_payload_rx_mon_rf_part2_t;
 
 /* Rx MON-VER Part 1 */
 typedef struct {
@@ -736,7 +735,8 @@ typedef union {
 	ubx_payload_rx_nav_velned_t		payload_rx_nav_velned;
 	ubx_payload_rx_mon_hw_ubx6_t		payload_rx_mon_hw_ubx6;
 	ubx_payload_rx_mon_hw_ubx7_t		payload_rx_mon_hw_ubx7;
-	ubx_payload_rx_mon_rf_t			payload_rx_mon_rf;
+	ubx_payload_rx_mon_rf_part1_t		payload_rx_mon_rf_part1;
+	ubx_payload_rx_mon_rf_part2_t		payload_rx_mon_rf_part2;
 	ubx_payload_rx_mon_ver_part1_t		payload_rx_mon_ver_part1;
 	ubx_payload_rx_mon_ver_part2_t		payload_rx_mon_ver_part2;
 	ubx_payload_rx_ack_ack_t		payload_rx_ack_ack;
@@ -831,6 +831,7 @@ private:
 	int payloadRxAddNavSvinfo(const uint8_t b);
 	int payloadRxAddNavSat(const uint8_t b);
 	int payloadRxAddMonVer(const uint8_t b);
+	int payloadRxAddMonRf(const uint8_t b);
 
 	/**
 	 * Finish payload rx
