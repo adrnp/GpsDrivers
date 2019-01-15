@@ -825,6 +825,7 @@ private:
 	 */
 	int payloadRxAdd(const uint8_t b);
 	int payloadRxAddNavSvinfo(const uint8_t b);
+	int payloadRxAddNavSat(const uint8_t b);
 	int payloadRxAddMonVer(const uint8_t b);
 
 	/**
