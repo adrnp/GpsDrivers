@@ -1478,7 +1478,7 @@ GPSDriverUBX::payloadRxAddRxmRawx(const uint8_t b)
 
 		// fill Part 2 buffer
 		unsigned buf_index = (_rx_payload_index - sizeof(ubx_payload_rx_rxm_rawx_part1_t)) % sizeof(
-					     ubx_payload_rx_rxm_rawx_part12_t);
+					     ubx_payload_rx_rxm_rawx_part2_t);
 		p_buf[buf_index] = b;
 
 		if (buf_index == sizeof(ubx_payload_rx_mon_ver_part2_t) - 1) {
