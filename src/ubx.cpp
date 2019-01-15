@@ -895,6 +895,7 @@ GPSDriverUBX::parseChar(const uint8_t b)
 
 		case UBX_MSG_MON_RF:
 			ret = payloadRxAddMonRf(b);		// add a MON-RF payload byte
+			break;
 
 		default:
 			ret = payloadRxAdd(b);		// add a payload byte
