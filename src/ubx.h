@@ -292,14 +292,19 @@
 #define UBX_CFG_KEY_MSGOUT_UBX_MON_RF_I2C        0x20910359
 #define UBX_CFG_KEY_MSGOUT_UBX_NAV_SVIN_I2C      0x20910088
 #define UBX_CFG_KEY_MSGOUT_UBX_NAV_SVINFO_I2C    0x2091000b
+#define UBX_CFG_KEY_MSGOUT_UBX_NAV_SAT_I2C 		 0x20910015
 #define UBX_CFG_KEY_MSGOUT_UBX_NAV_DOP_I2C       0x20910038
 #define UBX_CFG_KEY_MSGOUT_UBX_NAV_PVT_I2C       0x20910006
+#define UBX_CFG_KEY_MSGOUT_UBX_NAV_HPPOSECEF_I2C 0x2091002e
+#define UBX_CFG_KEY_MSGOUT_UBX_NAV_HPPOSLLH_I2C  0x20910033
+#define UBX_CFG_KEY_MSGOUT_UBX_RXM_RAWX_I2C      0x209102a4
 #define UBX_CFG_KEY_MSGOUT_RTCM_3X_TYPE1005_I2C  0x209102bd
 #define UBX_CFG_KEY_MSGOUT_RTCM_3X_TYPE1077_I2C  0x209102cc
 #define UBX_CFG_KEY_MSGOUT_RTCM_3X_TYPE1087_I2C  0x209102d1
 #define UBX_CFG_KEY_MSGOUT_RTCM_3X_TYPE1097_I2C  0x20910318
 #define UBX_CFG_KEY_MSGOUT_RTCM_3X_TYPE1127_I2C  0x209102d6
 #define UBX_CFG_KEY_MSGOUT_RTCM_3X_TYPE1230_I2C  0x20910303
+
 
 #define UBX_CFG_KEY_SPI_ENABLED                  0x10640006
 #define UBX_CFG_KEY_SPI_MAXFF                    0x20640001
@@ -440,6 +445,25 @@ typedef struct {
 	int16_t		azim; 		/**< Azimuth [deg] */
 	int32_t		prRes; 		/**< Pseudo range residual [cm] */
 } ubx_payload_rx_nav_svinfo_part2_t;
+
+/* Rx NAV-SAT Part 1 */
+typedef struct {
+	uint32_t 	iTOW;
+	uint8_t 	version;
+	uint8_t 	numSvs;
+	uint16_t 	reserved2;
+} ubx_playload_rx_nav_sat_part1_t;
+
+/* Rx NAV-SAT Part 2 (repeat) */
+typedef struct {
+	uint8_t 	gnssId;
+	uint8_t 	svId;
+	uint8_t		cno;
+	int8_t 		elev;
+	int16_t 	azim;
+	int16_t 	prRes;
+	uint32_t 	flags;
+} ubx_payload_rx_nav_sat_part2_t;
 
 /* Rx NAV-SVIN (survey-in info) */
 typedef struct {
@@ -702,6 +726,8 @@ typedef union {
 	ubx_payload_rx_nav_timeutc_t		payload_rx_nav_timeutc;
 	ubx_payload_rx_nav_svinfo_part1_t	payload_rx_nav_svinfo_part1;
 	ubx_payload_rx_nav_svinfo_part2_t	payload_rx_nav_svinfo_part2;
+	ubx_payload_rx_nav_sat_part1_t 		payload_rx_nav_sat_part1;
+	ubx_payload_rx_nav_sat_part2_t 		payload_rx_nav_sat_part2;
 	ubx_payload_rx_nav_svin_t		payload_rx_nav_svin;
 	ubx_payload_rx_nav_velned_t		payload_rx_nav_velned;
 	ubx_payload_rx_mon_hw_ubx6_t		payload_rx_mon_hw_ubx6;
