@@ -997,6 +997,26 @@ GPSDriverUBX::payloadRxInit()
 
 		break;
 
+	case UBX_MSG_NAV_HPPOSECEF:
+		// don't actually care to parse the message just yet
+		// just want to make sure the message doesn't get disabled
+		// goal - logging the raw bytes from the ublox (outside of this driver)
+		if (_rx_payload_length >= sizeof(ubx_buf_t)) {
+			_rx_payload_length = sizeof(ubx_buf_t) - 1; //avoid buffer overflow
+		}
+		_rx_state = UBX_RXMSG_IGNORE;  // ignore the message for now
+		break;
+
+	case UBX_MSG_NAV_HPPOSLLH:
+		// don't actually care to parse the message just yet
+		// just want to make sure the message doesn't get disabled
+		// goal - logging the raw bytes from the ublox (outside of this driver)
+		if (_rx_payload_length >= sizeof(ubx_buf_t)) {
+			_rx_payload_length = sizeof(ubx_buf_t) - 1; //avoid buffer overflow
+		}
+		_rx_state = UBX_RXMSG_IGNORE;  // ignore the message for now
+		break;
+
 	case UBX_MSG_NAV_SOL:
 		if (_rx_payload_length != sizeof(ubx_payload_rx_nav_sol_t)) {
 			_rx_state = UBX_RXMSG_ERROR_LENGTH;
