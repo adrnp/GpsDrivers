@@ -1132,13 +1132,13 @@ GPSDriverUBX::payloadRxInit()
 		break;
 
 	case UBX_MSG_MON_RF:
-		if (_rx_payload_length != sizeof(ubx_payload_rx_mon_rf_t)) {
-			// TODO: there could be more than one block... for now we should be fine with this though
+		// TODO: figure out how to double check payload length problems
+		// TODO: because it is now split into 2 parts to handle multiple blocks,
+		// I'm not positive on how to make sure there isn't a payload length problem
 
-			_rx_state = UBX_RXMSG_ERROR_LENGTH;
-
-		} else if (!_configured) {
-			_rx_state = UBX_RXMSG_IGNORE;        // ignore if not _configured
+		// only check to do is to ignore if not _configured
+		if (!_configured) {
+			_rx_state = UBX_RXMSG_IGNORE;		// ignore if not _configured
 		}
 
 		break;
