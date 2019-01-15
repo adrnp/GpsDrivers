@@ -452,7 +452,7 @@ typedef struct {
 	uint8_t 	version;
 	uint8_t 	numSvs;
 	uint16_t 	reserved2;
-} ubx_playload_rx_nav_sat_part1_t;
+} ubx_payload_rx_nav_sat_part1_t;
 
 /* Rx NAV-SAT Part 2 (repeat) */
 typedef struct {
