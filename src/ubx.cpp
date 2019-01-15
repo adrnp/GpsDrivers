@@ -1440,7 +1440,7 @@ GPSDriverUBX::payloadRxAddMonRf(const uint8_t b)
 					     ubx_payload_rx_mon_rf_part2_t);
 		p_buf[buf_index] = b;
 
-		if (buf_index == sizeof(ubx_payload_rx_mon_ver_part2_t) - 1) {
+		if (buf_index == sizeof(ubx_payload_rx_mon_rf_part2_t) - 1) {
 			// save the information for the rf information
 			// NOTE: this effectively saves the data for the last block, not the first block
 
