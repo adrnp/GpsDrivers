@@ -1275,9 +1275,9 @@ GPSDriverUBX::payloadRxAddNavSat(const uint8_t b)
 	} else {
 		if (_rx_payload_index == sizeof(ubx_payload_rx_nav_sat_part1_t)) {
 			// Part 1 complete: decode Part 1 buffer
-			_satellite_info->count = MIN(_buf.ubx_payload_rx_nav_sat_part1.numSvs, satellite_info_s::SAT_INFO_MAX_SATELLITES);
+			_satellite_info->count = MIN(_buf.payload_rx_nav_sat_part1.numSvs, satellite_info_s::SAT_INFO_MAX_SATELLITES);
 			UBX_TRACE_SVINFO("SVINFO len %u  numCh %u", (unsigned)_rx_payload_length,
-					 (unsigned)_buf.ubx_payload_rx_nav_sat_part1.numSvs);
+					 (unsigned)_buf.payload_rx_nav_sat_part1.numSvs);
 		}
 
 		if (_rx_payload_index < sizeof(ubx_payload_rx_nav_sat_part1_t) + _satellite_info->count * sizeof(
